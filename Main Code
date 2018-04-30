@@ -1,9 +1,94 @@
+import abc
 import pygame
 import time
 import random
 
 pygame.init() # IMPORTANT: initializes pygame and all of its modules
 
+class Action(object):
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self):
+        self.x = (display_width * 0.50)
+        self.y = (display_height * 0.50)
+        self.x_change = 0
+        self.y_change = 0
+
+    @abc.abstractmethod
+    def moveUp(self):
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_UP:
+                    y_change = -10
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_UP):
+                    y_change = 0
+        y += y_change # add y_change to the current position of the user
+
+    @abc.abstractmethod
+    def moveDown(self):
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_UP:
+                    y_change = 10
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_DOWN):
+                    y_change = 0
+        y += y_change # add y_change to the current position of the user
+
+    @abc.abstractmethod
+    def moveLeft(self):
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_LEFT:
+                    x_change = -10
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_LEFT):
+                    x_change = 0
+        x += x_change # add y_change to the current position of the user
+
+    @abc.abstractmethod
+    def moveRight(self):
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_LEFT:
+                    x_change = 10
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_LEFT):
+                    x_change = 0
+        x += x_change # add y_change to the current position of the user
+        
+class User(Action):
+    def __init__(self, name):
+        self.name = name
+        self.user_width = 24
+        self.user_height = 32
+        #gameDisplay.blit(userImg, (x, y)) # blit drawing to a surface; displays user
+
+    def moveUp(self):
+        Action.moveUp(self)
+
+    def moveDown(self):
+        Action.moveDown(self)
+
+    def moveLeft(self):
+        Action.moveLeft(self)
+
+    def moveRight(self):
+        Action.moveRight(self)
+
+    def user(x, y):
+        userImg = pygame.image.load('michael.png')
+        gameDisplay.blit(userImg, (x, y)) # blit drawing to a surface
+        
+def createUser():
+    global user
+    user = User("Michael")
+    
 # reference later on
 display_width = 700
 display_height = 500
@@ -12,11 +97,6 @@ display_height = 500
 black = (0, 0, 0)
 white = (255, 255, 255)
 red = (255, 0, 0)
-
-# *** USER ***
-# user dimensions
-user_width = 24
-user_height = 32
 
 # setup a window; your frame
 gameDisplay = pygame.display.set_mode((display_width, display_height)) # the game's width and height set in a tuple; tuples can be either 800, 600 OR (800, 600)
@@ -27,17 +107,10 @@ pygame.display.set_caption('Secret Agent Spy Game')
 # in game time
 clock = pygame.time.Clock()
 
+"""
 # images
 userImg = pygame.image.load('michael.png')
-
-# the ai the user will be up against
-# *** CPU ***
-def cpu(cpu_x, cpu_y, cpu_width, cpu_height, color):
-    pygame.draw.rect(gameDisplay, color, [cpu_x, cpu_y, cpu_width, cpu_height])
-
-# *** USER ***
-def user(x, y):
-    gameDisplay.blit(userImg, (x, y)) # blit drawing to a surface
+"""
 
 def text_objects(text, font): # you can place "color" as a requirement! so you can have more customization
     textSurface = font.render(text, True, black) # renders the font for us; True/False is for anti-aliasing, black is what color
@@ -87,74 +160,21 @@ def game_loop():
             if event.type == pygame.QUIT: # quits the game
                 gameExit = True
 
-            if event.type == pygame.KEYDOWN: # if there was a key pressed
-                if event.key == pygame.K_LEFT: # left-arrow key
-                    x_change = -10
-                elif event.key == pygame.K_RIGHT:
-                    x_change = 10
-                elif event.key == pygame.K_UP:
-                    y_change = -10
-                elif event.key == pygame.K_DOWN:
-                    y_change = 10
-
-            if event.type == pygame.KEYUP: # if the key is released
-                if (event.key == pygame.K_LEFT) or (event.key == pygame.K_RIGHT):
-                    x_change = 0 # stop changing x; AKA stop moving
-                elif (event.key == pygame.K_UP) or (event.key == pygame.K_DOWN):
-                    y_change = 0
-
-        x += x_change # add x_change to the current position of the user
-        y += y_change # add y_change to the current position of the user
-
-        #print(event) # tracks all events that are happening
-
         gameDisplay.fill(white) # creates the white background
-
-        # *** CPU ***
-        #cpu(cpu_x, cpu_y, cpu_width, cpu_height, color)
-        cpu(cpu_start_x, cpu_start_y, cpu_width, cpu_height, black)
-        '''cpu_start_y += cpu_speed # this will change the cpu's position EACH TIME we run through the while loop; it will be re-drawn everytime'''
-
-        # this will change the cpu's position EACH TIME we run through the while loop; each time it will pick a random x and y direction
-        direction_x = random.randrange(0, 2)
-        direction_y = random.randrange(0, 2)
-        if (direction_x == 0) and (direction_y == 0):
-            cpu_start_x += cpu_speed
-            cpu_start_y += cpu_speed
-            direction_x = 0
-            direction_y = 0
-        elif (direction_x == 1) and (direction_y == 0):
-            cpu_start_x -= cpu_speed
-            cpu_start_y += cpu_speed
-            direction_x = 0
-            direction_y = 0
-        elif (direction_x == 0) and (direction_y == 1):
-            cpu_start_x += cpu_speed
-            cpu_start_y -= cpu_speed
-            direction_x = 0
-            direction_y = 0
-        elif (direction_x == 1) and (direction_y == 1):
-            cpu_start_x -= cpu_speed
-            cpu_start_y -= cpu_speed
-            direction_x = 0
-            direction_y = 0
-            
+          
         # *** USER ***
-        user(x, y) # "draws" the user
+        user.user((x, y)) # draws the user; calls upon the newly created "user" object, this object was created with the "User" class (hence why it is user.user)
 
         # if the user exits goes out of the window...
         if (x > (display_width - user_width)) or (x <= 0): # if the user's location is...; user_width is the WIDTH of the IMAGE you are using for the user
             gameOver()
         elif (y > (display_height - user_height)) or (y <= 0):
             gameOver()
-
-        '''if (cpu_start_y > display_height): # if the cpu is off the screen...
-            cpu_start_y = 0 - cpu_height
-            cpu_start_x = random.randrange(0, display_width) # place cpu in a new, random x-location'''
         
         pygame.display.update() # you can put ONE parameter to update (easier on the system); pygame.display.flip() updates the ENTIRE system (like a flip-book)
-        clock.tick(1) # the frames per second; how often the display updates; how fast things move is different
+        clock.tick(15) # the frames per second; how often the display updates; how fast things move is different
 
+createUser()
 game_loop() # runs the game loop
 pygame.quit() # stops pygame from running
 quit() # quits python program itself
