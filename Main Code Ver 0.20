@@ -1,0 +1,350 @@
+import abc
+import pygame
+import time
+import random
+
+pygame.init() # IMPORTANT: initializes pygame and all of its modules
+display_width = 700
+display_height = 500
+x = (display_width * 0.50)
+y = (display_height * 0.50)
+class Action(object):
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self):
+        #self.x = (display_width * 0.50)
+        #self.y = (display_height * 0.50)
+        #self.x_change = 0
+        #self.y_change = 0
+        return
+
+    @abc.abstractmethod
+    def moveUp(self, y, y_change):
+        
+        
+        print y_change
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                print "Used"
+                if event.key == pygame.K_UP:
+                    print "Used1"
+                    y_change = -100
+                    print y_change
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_UP):
+                    y_change = 0
+
+            print "Before: {}".format(y)
+            y += y_change # add y_change to the current position of the user
+            print "After: {}".format(y)
+            return y
+
+    @abc.abstractmethod
+    def moveDown(self):
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_UP:
+                    y_change = 10
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_DOWN):
+                    y_change = 0
+        y += y_change # add y_change to the current position of the user
+
+    @abc.abstractmethod
+    def moveLeft(self):
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_LEFT:
+                    x_change = -10
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_LEFT):
+                    x_change = 0
+        x += x_change # add y_change to the current position of the user
+
+    @abc.abstractmethod
+    def moveRight(self):
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_LEFT:
+                    x_change = 10
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_LEFT):
+                    x_change = 0
+        x += x_change # add y_change to the current position of the user
+        
+class User(Action):
+    def __init__(self, name):
+        Action.__init__(self)
+        self.name = name
+        #gameDisplay.blit(userImg, (x, y)) # blit drawing to a surface; displays user
+
+    def moveUp(self, y, y_change):
+        Action.moveUp(self, y, y_change)
+
+    def moveDown(self):
+        Action.moveDown(self)
+
+    def moveLeft(self):
+        Action.moveLeft(self)
+
+    def moveRight(self):
+        Action.moveRight(self)
+
+    def user(self, (x, y)):
+        userImg = pygame.image.load('michael.png')
+        gameDisplay.blit(userImg, (x, y)) # blit drawing to a surface
+        
+def createUser():
+    global user1
+    user1 = User("Michael")
+    
+# reference later on
+
+
+# color definitions
+black = (0, 0, 0)
+white = (255, 255, 255)
+red = (255, 0, 0)
+
+# setup a window; your frame
+gameDisplay = pygame.display.set_mode((display_width, display_height)) # the game's width and height set in a tuple; tuples can be either 800, 600 OR (800, 600)
+
+# Window title
+pygame.display.set_caption('Secret Agent Spy Game')
+
+# in game time
+clock = pygame.time.Clock()
+
+"""
+# images
+userImg = pygame.image.load('michael.png')
+"""
+
+def text_objects(text, font): # you can place "color" as a requirement! so you can have more customization
+    textSurface = font.render(text, True, black) # renders the font for us; True/False is for anti-aliasing, black is what color
+    return textSurface, textSurface.get_rect() # this is so we can get a rectangle to surround our text
+
+def message_display(text): # what is the text you want displayed
+    titleText = pygame.font.Font('freesansbold.ttf', 50) # Font type and fony size
+    TextSurf, TextRect = text_objects(text, titleText) # the text's surface and the rectangle that contains it
+    TextRect.center = ((display_width/2), (display_height/2)) # center the text in the middle of the screen
+    gameDisplay.blit(TextSurf, TextRect) # blit meaning it's there, but it isn't visible yet!
+
+    # update the display to show the text!
+    pygame.display.update()
+
+    # display the message for 3 seconds
+    time.sleep(3)
+
+    # starts the game over!
+    game_loop()
+    
+def gameOver():
+    message_display("You lose!")
+
+def game_loop():
+    # Computer coordinates start on the TOP-LEFT; (0, 0) starts at the TOP-LEFT instead of BOTTOM-RIGHT
+
+    # *** USER ***
+    x_change = 0
+    y_change = 0
+    user_width = 24
+    user_height = 32
+
+    # *** CPU ***
+    # where the cpu will spawn at the start of the game
+    cpu_start_x = random.randrange(0, display_width)
+    cpu_start_y = random.randrange(0, display_height)
+    cpu_speed = 7
+    cpu_width = 24
+    cpu_height = 32
+
+    # main loop (AKA: game loop; break if it's gameover or user quits)
+    #dead = False # we have not died yet
+    gameExit = False
+
+    while not gameExit: # so long as the user is alive
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.QUIT: # quits the game
+                gameExit = True
+        user1.moveUp(y, y_change)
+        print "Reseted loop y: {}".format(y)
+
+        gameDisplay.fill(white) # creates the white background
+          
+        # *** USER ***
+        user1.user((x, y)) # draws the user; calls upon the newly created "user" object, this object was created with the "User" class (hence why it is user.user)
+        print "Reseted loop y after Michael: {}".format(y)
+
+        # if the user exits goes out of the window...
+        if (x > (display_width - user_width)) or (x <= 0): # if the user's location is...; user_width is the WIDTH of the IMAGE you are using for the user
+            gameOver()
+        elif (y > (display_height - user_height)) or (y <= 0):
+            gameOver()
+        
+        pygame.display.update() # you can put ONE parameter to update (easier on the system); pygame.display.flip() updates the ENTIRE system (like a flip-book)
+        clock.tick(1) # the frames per second; how often the display updates; how fast things move is different
+
+createUser()
+game_loop() # runs the game loop
+pygame.quit() # stops pygame from running
+quit() # quits python program itself
+
+#-------------------------------------------------------------------------------
+
+"""
+# reference later on
+display_width = 700
+display_height = 500
+
+# color definitions
+black = (0, 0, 0)
+white = (255, 255, 255)
+red = (255, 0, 0)
+
+# *** USER ***
+# user dimensions
+user_width = 24
+user_height = 32
+
+# setup a window; your frame
+gameDisplay = pygame.display.set_mode((display_width, display_height)) # the game's width and height set in a tuple; tuples can be either 800, 600 OR (800, 600)
+
+# Window title
+pygame.display.set_caption('Secret Agent Spy Game')
+
+# in game time
+clock = pygame.time.Clock()
+
+# images
+userImg = pygame.image.load('michael.png')
+
+# the ai the user will be up against
+# *** CPU ***
+def cpu(cpu_x, cpu_y, cpu_width, cpu_height, color):
+    pygame.draw.rect(gameDisplay, color, [cpu_x, cpu_y, cpu_width, cpu_height])
+
+# *** USER ***
+def user(x, y):
+    gameDisplay.blit(userImg, (x, y)) # blit drawing to a surface
+
+def text_objects(text, font): # you can place "color" as a requirement! so you can have more customization
+    textSurface = font.render(text, True, black) # renders the font for us; True/False is for anti-aliasing, black is what color
+    return textSurface, textSurface.get_rect() # this is so we can get a rectangle to surround our text
+
+def message_display(text): # what is the text you want displayed
+    titleText = pygame.font.Font('freesansbold.ttf', 50) # Font type and fony size
+    TextSurf, TextRect = text_objects(text, titleText) # the text's surface and the rectangle that contains it
+    TextRect.center = ((display_width/2), (display_height/2)) # center the text in the middle of the screen
+    gameDisplay.blit(TextSurf, TextRect) # blit meaning it's there, but it isn't visible yet!
+
+    # update the display to show the text!
+    pygame.display.update()
+
+    # display the message for 3 seconds
+    time.sleep(3)
+
+    # starts the game over!
+    game_loop()
+    
+def gameOver():
+    message_display("You lose!")
+
+def game_loop():
+    # Computer coordinates start on the TOP-LEFT; (0, 0) starts at the TOP-LEFT instead of BOTTOM-RIGHT
+    x = (display_width * 0.50)
+    y = (display_height * 0.50)
+
+    # *** USER ***
+    x_change = 0
+    y_change = 0
+
+    # *** CPU ***
+    # where the cpu will spawn at the start of the game
+    cpu_start_x = random.randrange(0, display_width)
+    cpu_start_y = random.randrange(0, display_height)
+    cpu_speed = 7
+    cpu_width = 24
+    cpu_height = 32
+
+    # main loop (AKA: game loop; break if it's gameover or user quits)
+    #dead = False # we have not died yet
+    gameExit = False
+
+    while not gameExit: # so long as the user is alive
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.QUIT: # quits the game
+                gameExit = True
+
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_LEFT: # left-arrow key
+                    x_change = -10
+                elif event.key == pygame.K_RIGHT:
+                    x_change = 10
+                elif event.key == pygame.K_UP:
+                    y_change = -10
+                elif event.key == pygame.K_DOWN:
+                    y_change = 10
+
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_LEFT) or (event.key == pygame.K_RIGHT):
+                    x_change = 0 # stop changing x; AKA stop moving
+                elif (event.key == pygame.K_UP) or (event.key == pygame.K_DOWN):
+                    y_change = 0
+
+        x += x_change # add x_change to the current position of the user
+        y += y_change # add y_change to the current position of the user
+
+        #print(event) # tracks all events that are happening
+
+        gameDisplay.fill(white) # creates the white background
+
+        # *** CPU ***
+        #cpu(cpu_x, cpu_y, cpu_width, cpu_height, color)
+        cpu(cpu_start_x, cpu_start_y, cpu_width, cpu_height, black)
+        '''cpu_start_y += cpu_speed # this will change the cpu's position EACH TIME we run through the while loop; it will be re-drawn everytime'''
+
+        # this will change the cpu's position EACH TIME we run through the while loop; each time it will pick a random x and y direction
+        direction_x = random.randrange(0, 2)
+        direction_y = random.randrange(0, 2)
+        if (direction_x == 0) and (direction_y == 0):
+            cpu_start_x += cpu_speed
+            cpu_start_y += cpu_speed
+            direction_x = 0
+            direction_y = 0
+        elif (direction_x == 1) and (direction_y == 0):
+            cpu_start_x -= cpu_speed
+            cpu_start_y += cpu_speed
+            direction_x = 0
+            direction_y = 0
+        elif (direction_x == 0) and (direction_y == 1):
+            cpu_start_x += cpu_speed
+            cpu_start_y -= cpu_speed
+            direction_x = 0
+            direction_y = 0
+        elif (direction_x == 1) and (direction_y == 1):
+            cpu_start_x -= cpu_speed
+            cpu_start_y -= cpu_speed
+            direction_x = 0
+            direction_y = 0
+            
+        # *** USER ***
+        user(x, y) # "draws" the user
+
+        # if the user exits goes out of the window...
+        if (x > (display_width - user_width)) or (x <= 0): # if the user's location is...; user_width is the WIDTH of the IMAGE you are using for the user
+            gameOver()
+        elif (y > (display_height - user_height)) or (y <= 0):
+            gameOver()
+        
+        pygame.display.update() # you can put ONE parameter to update (easier on the system); pygame.display.flip() updates the ENTIRE system (like a flip-book)
+        clock.tick(1) # the frames per second; how often the display updates; how fast things move is different
+
+game_loop() # runs the game loop
+pygame.quit() # stops pygame from running
+quit() # quits python program itself
+"""
