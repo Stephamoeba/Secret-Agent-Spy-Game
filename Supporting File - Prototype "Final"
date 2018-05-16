@@ -1,0 +1,64 @@
+################################################################################
+# Secret Agent Spy Game (SASG) - Prototype
+# Team 2 - Stephanie Niemiec, Melek Walden, Joshua Wheat
+# Date: 05/15/18
+#
+# Supporting file for the SasgPrototype
+# This file handles all of the ciruitry interaction for our SASG prototype
+#
+# Supporting file notes:
+#   > The file appears unfinished due to the time constaints for this project
+#       -> We intended to implement a "stun" functionality
+#           => Users would be able to stun their pursuers with this button,
+#               however we did not have the time to implement a pursuer
+#   > There are several print statements
+#       -> This was to verify that our file was working properly
+#           => The statements were typically used to see variable changes
+#
+################################################################################
+import pygame
+import RPi.GPIO as GPIO
+from time import sleep, time
+
+GPIO.setmode(GPIO.BCM) # use the Broadcom pin mode
+
+kill = 24 # button to do an action; YELLOW WIRE
+stun = 23 # ORANGE WIRE
+greenLed = 27 # MAROON WIRE
+
+GPIO.setup(kill, GPIO.IN, pull_up_down = GPIO.PUD_UP) # kill pin is an input that's False; when presesd it becomes True
+GPIO.setup(stun, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+GPIO.setup(greenLed, GPIO.OUT)
+
+def userActions(user, cpu, cpuList):
+    for c in cpuList[:]:
+        # MUST be in a loop if you want it to constantly check its state (i.e.: Is this HIGH or LOW?)
+        if (GPIO.input(kill) == GPIO.LOW):
+            GPIO.output(greenLed, True) # turn on led
+            print("{} button pressed!").format(kill)
+            # check if the user is close enough to the computer
+            if (( ( (user.x - cpu.x)**(2) ) + ( (user.y - cpu.y)**(2) ) )**(.5) < 50):
+                cpu.isAlive = False
+                #print("{} is DEAD".format(cpu.name)) # say which cpu died
+                if (cpu.name == "Joe"):
+                    print "JOE IS DEAD"
+                elif (cpu.name == "Bob"):
+                    print "BOB IS DEAD"
+                elif (cpu.name == "Steve"):
+                    print "STEVE IS DEAD"
+                pygame.transform.rotate(cpu.cpuImage, 90)
+                cpuList.remove(cpu)
+                return cpuList
+                
+            else:
+                 print("Not close enough to target!")
+
+    else:
+        GPIO.output(greenLed, False) # turn off led
+        print("{} button NOT pressed! No action").format(kill)
+
+    if (GPIO.input(stun) == GPIO.LOW):
+        print("Cpu stunned!!").format(stun)
+
+    else:
+        print(".").format(stun)
