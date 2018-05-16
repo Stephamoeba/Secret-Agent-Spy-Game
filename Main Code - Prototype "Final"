@@ -1,0 +1,299 @@
+################################################################################
+# Secret Agent Spy Game (SASG) - Prototype
+# Team 2 - Stephanie Niemiec, Melek Walden, Joshua Wheat
+# Date: 05/15/18
+#
+# This prototype has the available interactions for the user:
+#   > Receive a game over if they touch the window's borders
+#   > Receive a victory if the user takes out all cpus
+#       -> Taking out the cpus requires two things:
+#           => A breadboard with the correct circuitry (see circuit diagram)
+#           => The "wireUpForSASG" file to be imported
+#   > Prevents the player from moving through obstacles
+#
+# Prototype notes:
+#   > Obstacles are detected for during the "User Movement" if statements
+#       -> Checks if the user is near an obstacle that is in the obstacle list
+#           => List is named "walls"
+#   > Cpus are also stored in their own list
+#       -> This keeps track of which cpus are alive or dead
+#           => All dead cpus do not move
+#   > Both obstacles and computers spawn randomnly on the screen
+#       -> Cpus are supposed to spawn within the window borders
+#   > Program testers may have to restart or go out of bounds if:
+#       -> An obstacle spawns on top of the user
+#       -> One or all of the cpus leave the playable test area
+#           => This is only if the user wants to see the victory functionality
+#   > If once you finished testing and you also received a game over:
+#       -> Exit SASG via the Shell with Ctrl+C
+################################################################################
+
+import pygame
+from time import sleep, time
+import random
+
+from wireUpForSASG import *
+
+pygame.init() # IMPORTANT: initializes pygame and all of its modules
+
+# reference later on
+display_width = 700
+display_height = 400
+
+# color definitions
+black = (0, 0, 0)
+white = (255, 255, 255)
+red = (255, 0, 0)
+
+# *** USER ***
+# user dimensions
+user_width = 24
+user_height = 32
+
+# setup a window; your frame
+gameDisplay = pygame.display.set_mode((display_width, display_height)) # the game's width and height set in a tuple; tuples can be either 800, 600 OR (800, 600)
+
+# Window title
+pygame.display.set_caption('Secret Agent Spy Game')
+
+# in game time
+clock = pygame.time.Clock()
+
+# images
+userImg = pygame.image.load('michael.png')
+
+##########################################################################
+# CLASSES
+
+class User(object):
+    def __init__(self, x, y, name):
+        self.x = x
+        self.y = y
+        self.name = name
+
+class Cpu(object):
+    def __init__(self, x, y, name, cpuImage):
+        self.x = x
+        self.y = y
+        self.width = 24
+        self.height = 32
+        self.speed = 3 # how fast the cpu will be going on screen
+        self.name = name
+        self.cpuImage = pygame.image.load(cpuImage)
+        self.isAlive = True # if the cpu is killed, change it to False
+
+class Obstacle(object):
+    def __init__(self, x, y, width, height, name):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.name = name
+        self.color = red
+
+##########################################################################
+# FUNCTIONS
+
+# Check if the user is within a certain distance of the obstacle its...
+# Left side
+def checkObstacleLeft(obstacle, user):
+    if ((obstacle.x <= (user.x-10) <= (obstacle.x+obstacle.width)) & ((obstacle.y-32) <= user.y <= (obstacle.y+obstacle.height))):
+        return True
+
+# Right side
+def checkObstacleRight(obstacle, user):
+    if ((obstacle.x <= (user.x+30) <= (obstacle.x+obstacle.width)) & ((obstacle.y-32) <= user.y <= (obstacle.y+obstacle.height))):
+        return True
+
+# Top side
+def checkObstacleUp(obstacle, user):
+    if ((obstacle.y <= (user.y-10) <= (obstacle.y+obstacle.height)) & ((obstacle.x-24) <= user.x <= (obstacle.x+obstacle.width))):
+        return True
+
+# Bottom side
+def checkObstacleDown(obstacle, user):
+    if ((obstacle.y <= (user.y+40) <= (obstacle.y+obstacle.height)) & ((obstacle.x-24) <= user.x <= (obstacle.x+obstacle.width))):
+        return True
+
+
+# Message Displaying
+def text_objects(text, font): # you can place "color" as a requirement! so you can have more customization
+    textSurface = font.render(text, True, black) # renders the font for us; True/False is for anti-aliasing, black is what color
+    return textSurface, textSurface.get_rect() # this is so we can get a rectangle to surround our text
+
+def message_display(text): # what is the text you want displayed
+    titleText = pygame.font.Font('freesansbold.ttf', 50) # Font type and fony size
+    TextSurf, TextRect = text_objects(text, titleText) # the text's surface and the rectangle that contains it
+    TextRect.center = ((display_width/2), (display_height/2)) # center the text in the middle of the screen
+    gameDisplay.blit(TextSurf, TextRect) # blit meaning it's there, but it isn't visible yet!
+
+    # update the display to show the text
+    pygame.display.update()
+
+    # display the message for 2 seconds
+    sleep(2.0)
+
+    # starts the game over!
+    game_loop()
+
+# Messages to Appear On Screen
+def gameOver():
+    message_display("You lose!")
+
+def victory():
+    message_display("You win!")
+
+# Game Loop
+def game_loop():
+    # ***GAME INITIALIZATION***
+    # Everything before the "while not gameExit" loop is setup for the game_loop function
+
+    # Coordinates start on the TOP-LEFT; (0, 0) starts at the TOP-LEFT instead of BOTTOM-RIGHT
+    user = User((display_width * 0.50), (display_height * 0.50), "Michael")
+    cpu1 = Cpu(random.randrange(0, display_width), random.randrange(0, display_height), "Joe", 'joe.png')
+    cpu2 = Cpu(random.randrange(0, display_width), random.randrange(0, display_height), "Bob", 'bob.png')
+    cpu3 = Cpu(random.randrange(0, display_width), random.randrange(0, display_height), "Steve", 'steve.png')
+
+    # set cpus into a list
+    cpuList = [cpu1, cpu2, cpu3]
+
+
+    # ***CREATE OBSTACLES***
+    # Things that computers AND the user cannot move through
+    obstacle1 = Obstacle(random.randrange(0, display_width), random.randrange(0, display_height), 55, 75, "Obstacle 1")
+    obstacle2 = Obstacle(random.randrange(0, display_width), random.randrange(0, display_height), 32, 13, "Obstacle 2")
+    obstacle3 = Obstacle(random.randrange(0, display_width), random.randrange(0, display_height), 100, 28, "Obstacle 3")
+
+    # set obstacles into a list
+    walls = [obstacle1, obstacle2, obstacle3]
+
+    # These are added to the User's original x and y coordinate;
+    #   this is how we are able to update where the user is on
+    #   the coordinate grid.
+    x_change = 0
+    y_change = 0
+
+    # If True, then the "while" loop will end
+    gameExit = False
+
+    # ***MAIN LOOP***
+    while not gameExit: # (Breaks out of loop if: Game Over, Victory, or Ctrl+C)
+        for event in pygame.event.get(): # gets ANY event that happens; key presses, mouse clicks, etc.
+            if event.type == pygame.QUIT: # quits the game
+                gameExit = True
+
+            # ***USER MOVEMENT***
+            if event.type == pygame.KEYDOWN: # if there was a key pressed
+                if event.key == pygame.K_LEFT: # left-arrow key
+                    for w in walls: # check if one of the obstacles is nearby
+                        if checkObstacleLeft(w, user) == True:
+                            print "Don't move Left"
+                            x_change = 0
+                            break
+                        else:
+                            print "Keep moving Left"
+                            x_change = -10
+                            
+                elif event.key == pygame.K_RIGHT: # right-arrow key
+                    for w in walls:
+                        if checkObstacleRight(w, user) == True:
+                            print "Don't move Right"
+                            x_change = 0
+                            break
+                        else:
+                            x_change = 10
+                elif event.key == pygame.K_UP: # up-arrow key
+                    for w in walls:
+                        if checkObstacleUp(w, user) == True:
+                            print "Don't move Up"
+                            y_change = 0
+                            break
+                        else:
+                            y_change = -10
+                elif event.key == pygame.K_DOWN: # down-arrow key
+                    for w in walls:
+                        if checkObstacleDown(w, user) == True:
+                            print "Don't move Down"
+                            y_change = 0
+                            break
+                        else:
+                            y_change = 10
+                            
+            if event.type == pygame.KEYUP: # if the key is released
+                if (event.key == pygame.K_LEFT) or (event.key == pygame.K_RIGHT):
+                    x_change = 0 # stop changing x; AKA stop moving
+                elif (event.key == pygame.K_UP) or (event.key == pygame.K_DOWN):
+                    y_change = 0
+        
+        user.x += x_change # add x_change to the current position of the user
+        user.y += y_change # add y_change to the current position of the user
+
+        #print(event) # tracks all events that are happening
+        gameDisplay.fill(white) # creates the white background
+
+        # ***UPDATE USER & COMPUTER ON SCREEN***
+        # "spawns" the user and all cpus
+        gameDisplay.blit(userImg, (user.x, user.y))
+        gameDisplay.blit(cpu1.cpuImage, (cpu1.x, cpu1.y))
+        gameDisplay.blit(cpu2.cpuImage, (cpu2.x, cpu2.y))
+        gameDisplay.blit(cpu3.cpuImage, (cpu3.x, cpu3.y))
+                
+        # ***USER ACTIONS***
+        # check to see if the user can do an action; see wireUpForSASG for the code
+        userActions(user, cpu1, cpuList) # note: for some reason it wouldn't take cpu on a higher line
+        userActions(user, cpu2, cpuList)
+        userActions(user, cpu3, cpuList)
+        if len(cpuList) == False:
+            victory()
+        
+
+        # ***DRAW OBSTACLES***
+        pygame.draw.rect(gameDisplay, obstacle1.color, [obstacle1.x, obstacle1.y, obstacle1.width, obstacle1.height])
+        pygame.draw.rect(gameDisplay, obstacle2.color, [obstacle2.x, obstacle2.y, obstacle2.width, obstacle2.height])
+        pygame.draw.rect(gameDisplay, obstacle3.color, [obstacle3.x, obstacle3.y, obstacle3.width, obstacle3.height])
+
+        # ***CPU MOVEMENT ***
+        # this will change the cpu's position EACH TIME the while loop runs; picks a random x and y direction
+        direction_x = random.randrange(0, 2)
+        direction_y = random.randrange(0, 2)
+        if (direction_x == 0) and (direction_y == 0):
+            for cpu in cpuList:
+                cpu.x += cpu.speed
+                cpu.y += cpu.speed
+                direction_x = 0
+                direction_y = 0
+        elif (direction_x == 1) and (direction_y == 0):
+            for cpu in cpuList:
+                cpu.x -= cpu.speed
+                cpu.y += cpu.speed
+                direction_x = 0
+                direction_y = 0
+        elif (direction_x == 0) and (direction_y == 1):
+            for cpu in cpuList:
+                cpu.x += cpu.speed
+                cpu.y -= cpu.speed
+                direction_x = 0
+                direction_y = 0
+        elif (direction_x == 1) and (direction_y == 1):
+            for cpu in cpuList:
+                cpu.x -= cpu.speed
+                cpu.y -= cpu.speed
+                direction_x = 0
+                direction_y = 0
+
+        # if the user touches the window's border...
+        if (user.x > (display_width - user_width)) or (user.x <= 0): # if the user's location is...; user_width is the WIDTH of the IMAGE you are using for the user
+            gameOver()
+        elif (user.y > (display_height - user_height)) or (user.y <= 0):
+            gameOver()
+
+        # Game Loop "Settings"
+        pygame.display.update() # you can put ONE parameter to update (easier on the system); pygame.display.flip() updates the ENTIRE system (like a flip-book)
+        clock.tick(15) # the frames per second; how often the display updates; how fast things move is different
+
+##########################################################################
+# MAIN PART OF PROGRAM
+
+game_loop() # runs the game loop
+pygame.quit() # stops pygame from running
+quit() # quits python program itself
